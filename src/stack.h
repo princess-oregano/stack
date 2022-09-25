@@ -5,10 +5,12 @@
 
 typedef int elem_t;
 
+const size_t STACK_CAPACITY = 10;
+
 struct stack_t {
         elem_t *data = nullptr;
         size_t size = 0;
-        size_t capacity = 0;
+        size_t capacity = STACK_CAPACITY;
 };
 
 // Creates stack.

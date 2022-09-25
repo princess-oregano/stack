@@ -4,13 +4,10 @@
 int main()
 {
         stack_t stack {};
-        elem_t value = 0;
-
-        printf("Enter capacity:\n");
-        scanf("%zu", &stack.capacity);
 
         stack_ctor(&stack, stack.capacity);
 
+        elem_t value = 0;
         printf("Enter values:\n");
         while (scanf("%d", &value) == 1) {
                 stack_push(&stack, value);
