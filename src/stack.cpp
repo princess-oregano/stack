@@ -4,16 +4,16 @@
 
 void stack_ctor(stack_t *stack, size_t capacity)
 {
-        stack->data = (int *) calloc(capacity, sizeof(int)); 
+        stack->data = (elem_t *) calloc(capacity, sizeof(elem_t));
 }
 
-void stack_push(stack_t *stack, int elem)
+void stack_push(stack_t *stack, elem_t elem)
 {
         stack->data[stack->size] = elem;
         stack->size++;
 }
 
-int stack_pop(stack_t *stack)
+elem_t stack_pop(stack_t *stack)
 {
         stack->size--;
         return stack->data[stack->size];

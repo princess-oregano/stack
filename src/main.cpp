@@ -4,7 +4,7 @@
 int main()
 {
         stack_t stack {};
-        int value = 0;
+        elem_t value = 0;
 
         printf("Enter capacity:\n");
         scanf("%zu", &stack.capacity);
@@ -17,7 +17,7 @@ int main()
         }
 
         while (stack.size > 0) {
-                int ret = stack_pop(&stack);
+                elem_t ret = stack_pop(&stack);
                 printf("ret = %d\n", ret);
         }
 
