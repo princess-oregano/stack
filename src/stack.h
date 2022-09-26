@@ -14,12 +14,13 @@ struct stack_t {
 };
 
 // Creates stack.
-void stack_ctor(stack_t *stack, size_t capacity);
+int stack_ctor(stack_t *stack);
 // Pushes element to the stack.
-void stack_push(stack_t *stack, elem_t elem);
+int stack_push(stack_t *stack, elem_t elem);
 // Pops the elemnt out of the stack.
-int stack_pop(stack_t *stack);
+elem_t stack_pop(stack_t *stack);
 // Deconstructs stack.
-void stack_dtor(stack_t *stack);
+int stack_dtor(stack_t *stack);
 
 #endif // STACK_H
+

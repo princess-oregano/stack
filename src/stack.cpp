@@ -1,41 +1,53 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <assert.h>
+#include "error.h"
 #include "stack.h"
 
-static void 
+static int
 data_resize(elem_t **data, size_t *capacity)
 {
         elem_t *stk_data_ptr = nullptr;
         *capacity *= 2;
 
-        stk_data_ptr = (elem_t *) realloc(*data, *capacity * sizeof(stack_t));
-        *data = stk_data_ptr;
+        if ((stk_data_ptr = (elem_t *) realloc(*data,
+                            *capacity * sizeof(stack_t))) == nullptr)
+                return ERR_ALLOC;
+        else
+                *data = stk_data_ptr;
+
+        return ERR_NO_ERR;
 }
 
-void 
-stack_ctor(stack_t *stack, size_t capacity)
+int
+stack_ctor(stack_t *stack)
 {
         assert(stack);
 
-        stack->data = (elem_t *) calloc(capacity, sizeof(elem_t));
+        if ((stack->data = (elem_t *) calloc(stack->capacity, sizeof(elem_t))) == nullptr)
+                return ERR_ALLOC;
+
+        return ERR_NO_ERR;
 }
 
-void 
+int
 stack_push(stack_t *stack, elem_t elem)
 {
         assert(stack);
+        int err_local = ERR_NO_ERR;
 
         if (stack->size >= stack->capacity) {
+                if ((err_local = data_resize(&stack->data, &stack->capacity)) != ERR_NO_ERR)
+                        return err_local;
                 fprintf(stderr, "Resize\n");
-                data_resize(&stack->data, &stack->capacity);
         }
 
         stack->data[stack->size++] = elem;
+
+        return ERR_NO_ERR;
 }
 
-elem_t 
+elem_t
 stack_pop(stack_t *stack)
 {
         assert(stack);
@@ -44,10 +56,13 @@ stack_pop(stack_t *stack)
         return stack->data[stack->size];
 }
 
-void 
+int
 stack_dtor(stack_t *stack)
 {
         assert(stack);
 
         free(stack->data);
+
+        return ERR_NO_ERR;
 }
+

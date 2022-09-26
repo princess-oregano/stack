@@ -1,7 +1,7 @@
 SRCDIR := src
 OBJDIR := obj
 
-SRC := main.cpp stack.cpp
+SRC := main.cpp stack.cpp error.cpp
 OBJ := $(addprefix $(OBJDIR)/, $(SRC:.cpp=.o))
 TARGET := stack
 
@@ -26,7 +26,6 @@ CXXFLAGS := -O3 -g -std=c++14 -fmax-errors=100 -Wall -Wextra                  \
 	    -fsized-deallocation -fstack-check -fstack-protector              \
 	    -fstrict-overflow -flto-odr-type-merging                          \
 	    -fno-omit-frame-pointer                                           \
-	    -fsanitize=address                                                \
 	    -fsanitize=alignment                                              \
 	    -fsanitize=bool                                                   \
 	    -fsanitize=bounds                                                 \
@@ -48,7 +47,6 @@ CXXFLAGS := -O3 -g -std=c++14 -fmax-errors=100 -Wall -Wextra                  \
 	    -fsanitize=vptr                                                   \
 	    -fPIE                                                             \
 	    -lm -pie
-
 .SILENT:
 all: out run
 
