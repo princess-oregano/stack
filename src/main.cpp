@@ -2,12 +2,13 @@
 #include "stack.h"
 #include "error.h"
 
-int main()
+int
+main()
 {
         stack_t stack {};
         unsigned int error = 0;
 
-        if ((error |= stack_ctor(&stack)) != ERR_NO_ERR) {
+        if ((error |= stack_ctor(&stack, DEF_STACK_CAPACITY)) != ERR_NO_ERR) {
                 decypher_error(error);
                 return error;
         }

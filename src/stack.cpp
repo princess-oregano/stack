@@ -20,10 +20,11 @@ data_resize(elem_t **data, size_t *capacity)
 }
 
 int
-stack_ctor(stack_t *stack)
+stack_ctor(stack_t *stack, unsigned int capacity)
 {
         assert(stack);
 
+        stack->capacity = capacity;
         if ((stack->data = (elem_t *) calloc(stack->capacity, sizeof(elem_t))) == nullptr)
                 return ERR_ALLOC;
 
