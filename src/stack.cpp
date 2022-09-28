@@ -5,10 +5,21 @@
 #include "stack.h"
 
 static int
-data_resize(elem_t **data, size_t *capacity)
+data_resize(elem_t **data, size_t *capacity, int mode)
 {
         elem_t *stk_data_ptr = nullptr;
-        *capacity *= 2;
+        switch(mode) {
+                case REDUCE:
+                        if (*capacity > DEF_STACK_CAPACITY)
+                                *capacity /= 2;
+                        break;
+                case INCREASE:
+                        *capacity *= 2;
+                        break;
+                default:
+                        assert(0 && "Invalid resize mode.\n");
+                        break;
+        }
 
         if ((stk_data_ptr = (elem_t *) realloc(*data,
                             *capacity * sizeof(stack_t))) == nullptr)
@@ -35,12 +46,13 @@ int
 stack_push(stack_t *stack, elem_t elem)
 {
         assert(stack);
-        int err_local = ERR_NO_ERR;
+        int err = ERR_NO_ERR;
 
         if (stack->size >= stack->capacity) {
-                if ((err_local = data_resize(&stack->data, &stack->capacity)) != ERR_NO_ERR)
-                        return err_local;
-                fprintf(stderr, "Resize\n");
+                if ((err = data_resize(&stack->data, &stack->capacity, INCREASE)) != ERR_NO_ERR)
+                        return err;
+                fprintf(stderr, "size = %zu, capacity = %zu\n",
+                                stack->size, stack->capacity);
         }
 
         stack->data[stack->size++] = elem;
@@ -52,9 +64,18 @@ elem_t
 stack_pop(stack_t *stack)
 {
         assert(stack);
+        int err = ERR_NO_ERR;
 
         stack->size--;
-        return stack->data[stack->size];
+        elem_t ret_val = stack->data[stack->size];
+
+        if (2 * stack->size < stack->capacity) {
+                fprintf(stderr, "size = %zu, capacity = %zu\n",
+                                stack->size, stack->capacity);
+                err = data_resize(&stack->data, &stack->capacity, REDUCE);
+        }
+
+        return ret_val;
 }
 
 int

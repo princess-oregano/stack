@@ -7,6 +7,11 @@ typedef int elem_t;
 
 const size_t DEF_STACK_CAPACITY = 10;
 
+enum resize_mode_t {
+        REDUCE   = -1,
+        INCREASE = 1,
+};
+
 struct stack_t {
         elem_t *data = nullptr;
         size_t size = 0;
