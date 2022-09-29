@@ -93,7 +93,14 @@ stack_dtor(stack_t *stack)
 {
         assert(stack);
 
+        stack->size = (unsigned int) -1;
+        stack->capacity = (unsigned int) -1;
+        for (size_t i = 0; i < stack->capacity; i++)
+                stack->data[i] = 0;
+
         free(stack->data);
+
+        stack->data = (elem_t *) 0xDEAD0000;
 
         return ERR_NO_ERR;
 }
