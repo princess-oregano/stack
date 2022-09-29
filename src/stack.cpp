@@ -30,10 +30,20 @@ data_resize(elem_t **data, size_t *capacity, int mode)
         return ERR_NO_ERR;
 }
 
+static void data_dump(stack_t stack)
+{
+        size_t i = 0;
+
+        for (i = 0; i < stack.capacity; i++)
+                printf("[%zu]%d\n", i, stack.data[i]);
+}
+
 int
-stack_ctor(stack_t *stack, unsigned int capacity)
+stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
 {
         assert(stack);
+
+        stack->var_info = var_info;
 
         stack->capacity = capacity;
         if ((stack->data = (elem_t *) calloc(stack->capacity, sizeof(elem_t))) == nullptr)
@@ -86,5 +96,23 @@ stack_dtor(stack_t *stack)
         free(stack->data);
 
         return ERR_NO_ERR;
+}
+
+void stack_dump(stack_t stack, var_info_t cur_var_info)
+{
+        fprintf(stdout,
+                "%s() at %s(%d):\n"
+                "%s[%p] \"%s\" at %s() at %s(%d)\n"
+                "{\n"
+                "size = %zu\n"
+                "capacity = %zu\n"
+                "data[%p]:\n",
+                cur_var_info.func_name, cur_var_info.file_name,
+                cur_var_info.line, cur_var_info.init_var_name,
+                &stack, stack.var_info.init_var_name,
+                stack.var_info.func_name, stack.var_info.file_name,
+                stack.var_info.line, stack.size, stack.capacity, &stack.data);
+
+        data_dump(stack);
 }
 

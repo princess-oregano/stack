@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "stack.h"
 #include "error.h"
+#include <math.h>
 
 int
 main()
@@ -8,7 +9,7 @@ main()
         stack_t stack {};
         unsigned int error = 0;
 
-        if ((error |= stack_ctor(&stack, DEF_STACK_CAPACITY)) != ERR_NO_ERR) {
+        if ((error |= stack_ctor(&stack, DEF_STACK_CAPACITY, VAR_INFO(stack))) != ERR_NO_ERR) {
                 decypher_error(error);
                 return error;
         }
@@ -22,6 +23,8 @@ main()
                         return error;
                 }
         }
+
+        stack_dump(stack, VAR_INFO(stack));
 
         while (stack.size > 0) {
                 elem_t ret = stack_pop(&stack);
