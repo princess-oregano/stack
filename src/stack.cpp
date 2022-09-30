@@ -35,7 +35,7 @@ static void data_dump(stack_t stack)
         size_t i = 0;
 
         for (i = 0; i < stack.capacity; i++)
-                printf("[%zu]%d\n", i, stack.data[i]);
+                printf("        [%zu]%d\n", i, stack.data[i]);
 }
 
 int
@@ -93,27 +93,28 @@ stack_dtor(stack_t *stack)
 {
         assert(stack);
 
-        stack->size = (unsigned int) -1;
-        stack->capacity = (unsigned int) -1;
         for (size_t i = 0; i < stack->capacity; i++)
                 stack->data[i] = 0;
+        stack->size = (unsigned int) -1;
+        stack->capacity = (unsigned int) -1;
 
-        free(stack->data);
+        if (stack->data != nullptr)
+                free(stack->data);
 
         stack->data = (elem_t *) 0xDEAD0000;
 
         return ERR_NO_ERR;
 }
 
-void stack_dump(stack_t stack, var_info_t cur_var_info)
+void
+stack_dump(stack_t stack, var_info_t cur_var_info)
 {
         fprintf(stdout,
-                "%s() at %s(%d):\n"
-                "%s[%p] \"%s\" at %s() at %s(%d)\n"
-                "{\n"
-                "size = %zu\n"
-                "capacity = %zu\n"
-                "data[%p]:\n",
+                "%s at %s(%d):\n"
+                "%s[%p] \"%s\" at %s at %s(%d)\n"
+                "       size = %zu\n"
+                "       capacity = %zu\n"
+                "       data[%p]:\n",
                 cur_var_info.func_name, cur_var_info.file_name,
                 cur_var_info.line, cur_var_info.init_var_name,
                 &stack, stack.var_info.init_var_name,

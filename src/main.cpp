@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "stack.h"
 #include "error.h"
-#include <math.h>
 
 int
 main()
