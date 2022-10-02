@@ -1,7 +1,6 @@
 #include <stdio.h>
 
 struct error_t {
-        bool ERR_NO_ERR = 0;
         bool ERR_ALLOC = 0;
         bool ERR_BAD_SIZE = 0;
         bool ERR_BAD_CAP = 0;

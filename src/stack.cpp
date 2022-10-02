@@ -4,9 +4,11 @@
 #include "error.h"
 #include "stack.h"
 
-static int
+static long long
 data_resize(elem_t **data, size_t *capacity, int mode)
 {
+        err_u err {};
+
         elem_t *stk_data_ptr = nullptr;
         switch(mode) {
                 case REDUCE:
@@ -22,12 +24,14 @@ data_resize(elem_t **data, size_t *capacity, int mode)
         }
 
         if ((stk_data_ptr = (elem_t *) realloc(*data,
-                            *capacity * sizeof(stack_t))) == nullptr)
-                return ERR_ALLOC;
+                            *capacity * sizeof(stack_t))) == nullptr) {
+                err.type.ERR_ALLOC = true;
+                return err.val;
+        }
         else
                 *data = stk_data_ptr;
 
-        return ERR_NO_ERR;
+        return err.val;
 }
 
 static void data_dump(stack_t stack)
@@ -38,60 +42,67 @@ static void data_dump(stack_t stack)
                 printf("        [%zu]%d\n", i, stack.data[i]);
 }
 
-int
+long long
 stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
 {
         assert(stack);
 
+        err_u err {};
+
         stack->var_info = var_info;
 
         stack->capacity = capacity;
-        if ((stack->data = (elem_t *) calloc(stack->capacity, sizeof(elem_t))) == nullptr)
-                return ERR_ALLOC;
+        if ((stack->data = (elem_t *) calloc(stack->capacity, sizeof(elem_t))) == nullptr) {
+                err.type.ERR_ALLOC = 1;
+                return err.val;
+        }
 
-        return ERR_NO_ERR;
+        return err.val;
 }
 
-int
+long long
 stack_push(stack_t *stack, elem_t elem)
 {
         assert(stack);
-        int err = ERR_NO_ERR;
+
+        err_u err {};
 
         if (stack->size >= stack->capacity) {
-                if ((err = data_resize(&stack->data, &stack->capacity, INCREASE)) != ERR_NO_ERR)
-                        return err;
+                if ((err.val |= data_resize(&stack->data, &stack->capacity, INCREASE)) != 0)
+                        return err.val;
                 fprintf(stderr, "size = %zu, capacity = %zu\n",
                                 stack->size, stack->capacity);
         }
 
         stack->data[stack->size++] = elem;
 
-        return ERR_NO_ERR;
+        return err.val;
 }
 
-elem_t
-stack_pop(stack_t *stack)
+long long
+stack_pop(stack_t *stack, elem_t *ret_val)
 {
         assert(stack);
-        int err = ERR_NO_ERR;
+
+        err_u err {};
 
         stack->size--;
-        elem_t ret_val = stack->data[stack->size];
+        *ret_val = stack->data[stack->size];
 
         if (2 * stack->size < stack->capacity) {
                 fprintf(stderr, "size = %zu, capacity = %zu\n",
                                 stack->size, stack->capacity);
-                err = data_resize(&stack->data, &stack->capacity, REDUCE);
+                err.val |= data_resize(&stack->data, &stack->capacity, REDUCE);
         }
 
-        return ret_val;
+        return err.val;
 }
 
-int
+long long
 stack_dtor(stack_t *stack)
 {
         assert(stack);
+        err_u err {};
 
         for (size_t i = 0; i < stack->capacity; i++)
                 stack->data[i] = 0;
@@ -103,7 +114,7 @@ stack_dtor(stack_t *stack)
 
         stack->data = (elem_t *) 0xDEAD0000;
 
-        return ERR_NO_ERR;
+        return err.val;
 }
 
 void
