@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
 #include "error.h"
 #include "stack.h"
 
@@ -28,21 +29,25 @@ data_resize(stack_t *stack, size_t capacity)
 
         char *data_ptr = (char *)stack->data - sizeof(unsigned long long);
 
-        char *stk_data_ptr_tmp = (char *) realloc(data_ptr, capacity * sizeof(elem_t) +
-                                2 * sizeof(unsigned long long));
+        size_t data_size = capacity * sizeof(elem_t) +
+                           2 * sizeof(unsigned long long);
+        char *stk_data_ptr_tmp = (char *) realloc(data_ptr, data_size);
 
         if (stk_data_ptr_tmp == nullptr) {
                 err.type.ERR_ALLOC = true;
                 return err.val;
         }
 
-        stack->capacity = capacity;
+        memcpy(stk_data_ptr_tmp, &CANARY_VAL, sizeof(CANARY_VAL));
+        memcpy(stk_data_ptr_tmp + data_size - sizeof(unsigned long long),
+               &CANARY_VAL, sizeof(CANARY_VAL));
 
         stack->data = (elem_t *) (stk_data_ptr_tmp + sizeof(unsigned long long));
 
-        *((unsigned long long *) stack->data - 1) = CANARY_VAL;
-        *(unsigned long long *) (stack->data + stack->capacity) = CANARY_VAL;
+        for (size_t i = stack->capacity; i < capacity; i++)
+                memset(&stack->data[i], DATA_POISON, sizeof(elem_t));
 
+        stack->capacity = capacity;
         stack->crc_hash = 0;
         stack->crc_hash = crc8(stack->crc_hash, stack, sizeof(stack_t));
 
@@ -57,17 +62,21 @@ stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
         err_u err {};
         char *tmp_data_ptr = nullptr;
 
-        stack->var_info = var_info;
-        stack->capacity = capacity;
-
-
-        tmp_data_ptr = (char *) calloc(stack->capacity * sizeof(elem_t)
-                         + 2 * sizeof(unsigned long long), 1);
+        size_t data_size = capacity * sizeof(elem_t) +
+                           2 * sizeof(unsigned long long);
+        tmp_data_ptr = (char *) calloc(data_size, 1);
 
         if (tmp_data_ptr == nullptr) {
                 err.type.ERR_ALLOC = 1;
                 return err.val;
         }
+
+        memcpy(tmp_data_ptr, &CANARY_VAL, sizeof(CANARY_VAL));
+        memcpy(tmp_data_ptr + data_size - sizeof(unsigned long long),
+               &CANARY_VAL, sizeof(CANARY_VAL));
+
+        fprintf(stderr, "stack address = %p\n", stack);
+        fprintf(stderr, "sizeof(stack) = %zx\n", sizeof(stack_t));
 
         stack->data = (elem_t *)(tmp_data_ptr + sizeof(unsigned long long));
 
@@ -75,12 +84,10 @@ stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
                          (unsigned long long *) stack->data);
         fprintf(stderr, "(unsigned long long *) stack->data - 1 = %p\n",
                          (unsigned long long *) stack->data - 1);
-        *((unsigned long long *) stack->data - 1) = CANARY_VAL;
-        *((unsigned long long *) (stack->data + stack->capacity)) = CANARY_VAL;
 
-        fprintf(stderr, "stack address = %p\n", stack);
-        fprintf(stderr, "sizeof(stack) = %zx\n", sizeof(stack_t));
         stack->crc_hash = crc8(0, stack, sizeof(stack_t));
+        stack->var_info = var_info;
+        stack->capacity = capacity;
 
         return err.val;
 }
@@ -114,7 +121,7 @@ stack_pop(stack_t *stack, elem_t *ret_val)
 
         stack->size--;
         *ret_val = stack->data[stack->size];
-        stack->data[stack->size] = DATA_POISON;
+        memset(&stack->data[stack->size], DATA_POISON, sizeof(elem_t));
 
         if (2 * stack->size < stack->capacity) {
                 err.val |= data_resize(stack, stack->capacity/2);
@@ -150,14 +157,19 @@ data_dump(stack_t stack)
 {
         size_t i = 0;
 
-        for (i = 0; i < stack.capacity; i++)
-                printf("        [%zu]0x%016llx %d\n", i, (unsigned long long) stack.data[i], stack.data[i]);
+        for (i = 0; i < stack.capacity; i++) {
+                char *ch = (char *) &stack.data[i];
+                for (size_t j = 0; j < sizeof(elem_t); j++) {
+                        fprintf(stderr, "%02hhx ", *(ch + j));
+                }
+                fprintf(stderr, "\n");
+        }
 }
 
 void
 stack_dump(stack_t stack, var_info_t cur_var_info)
 {
-        fprintf(stdout,
+        fprintf(stderr,
                 "%s at %s(%d):\n"
                 "%s[%p] \"%s\" at %s at %s(%d)\n"
                 "       hash = %u\n"
