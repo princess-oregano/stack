@@ -8,7 +8,7 @@
 typedef int elem_t;
 
 const size_t DEF_STACK_CAPACITY = 10;
-const elem_t DATA_POISON = 968168452;
+const elem_t DATA_POISON = (elem_t) 0xDEADDA1A;
 
 enum resize_mode_t {
         REDUCE   = -1,

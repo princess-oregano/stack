@@ -5,18 +5,18 @@
 #include "stack.h"
 
 static long long
-data_resize(elem_t **data, size_t *capacity, int mode)
+data_resize(elem_t **data, stack_t *stack, int mode)
 {
         err_u err {};
 
         elem_t *stk_data_ptr = nullptr;
         switch(mode) {
                 case REDUCE:
-                        if (*capacity > DEF_STACK_CAPACITY)
-                                *capacity /= 2;
+                        if (stack->capacity > DEF_STACK_CAPACITY)
+                                stack->capacity /= 2;
                         break;
                 case INCREASE:
-                        *capacity *= 2;
+                        stack->capacity *= 2;
                         break;
                 default:
                         assert(0 && "Invalid resize mode.\n");
@@ -24,12 +24,16 @@ data_resize(elem_t **data, size_t *capacity, int mode)
         }
 
         if ((stk_data_ptr = (elem_t *) realloc(*data,
-                            *capacity * sizeof(stack_t))) == nullptr) {
+                            stack->capacity * sizeof(stack_t))) == nullptr) {
                 err.type.ERR_ALLOC = true;
                 return err.val;
         }
         else
                 *data = stk_data_ptr;
+
+        if (mode == INCREASE)
+                for (size_t i = stack->size; i < stack->capacity; i++)
+                        stack->data[i] = 0;
 
         return err.val;
 }
@@ -39,7 +43,7 @@ static void data_dump(stack_t stack)
         size_t i = 0;
 
         for (i = 0; i < stack.capacity; i++)
-                printf("        [%zu]%d\n", i, stack.data[i]);
+                printf("        [%zu]0x%012x\n", i, stack.data[i]);
 }
 
 long long
@@ -68,10 +72,8 @@ stack_push(stack_t *stack, elem_t elem)
         err_u err {};
 
         if (stack->size >= stack->capacity) {
-                if ((err.val |= data_resize(&stack->data, &stack->capacity, INCREASE)) != 0)
+                if ((err.val |= data_resize(&stack->data, stack, INCREASE)) != 0)
                         return err.val;
-                fprintf(stderr, "size = %zu, capacity = %zu\n",
-                                stack->size, stack->capacity);
         }
 
         stack->data[stack->size++] = elem;
@@ -88,11 +90,10 @@ stack_pop(stack_t *stack, elem_t *ret_val)
 
         stack->size--;
         *ret_val = stack->data[stack->size];
+        stack->data[stack->size] = DATA_POISON;
 
         if (2 * stack->size < stack->capacity) {
-                fprintf(stderr, "size = %zu, capacity = %zu\n",
-                                stack->size, stack->capacity);
-                err.val |= data_resize(&stack->data, &stack->capacity, REDUCE);
+                err.val |= data_resize(&stack->data, stack, REDUCE);
         }
 
         return err.val;

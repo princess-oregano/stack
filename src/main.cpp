@@ -11,7 +11,7 @@ main()
         error.val |= stack_ctor(&stack, DEF_STACK_CAPACITY, VAR_INFO(stack));
         if (error.val != 0) {
                 decypher_error(error);
-                return error.val;
+                return (int) error.val;
         }
 
         printf("Enter values:\n");
@@ -21,7 +21,7 @@ main()
                 stack_push(&stack, value);
                 if (error.val) {
                         decypher_error(error);
-                        return error.val;
+                        return (int) error.val;
                 }
         }
 
@@ -36,7 +36,7 @@ main()
         error.val |= stack_dtor(&stack);
         if (error.val != 0) {
                 decypher_error(error);
-                return error.val;
+                return (int) error.val;
         }
 
         return 0;
