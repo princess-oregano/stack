@@ -2,13 +2,21 @@
 #include "error.h"
 
 void
-decypher_error(unsigned int err)
+decypher_error(err_u err)
 {
-        if (err  == ERR_NO_ERR)
+        if (err.val == 0)
                 return;
 
-        if ((err & ERR_ALLOC) == ERR_ALLOC) {
+        if (err.type.ERR_ALLOC) {
                 fprintf(stderr, "Couldn't allocate memory.\n");
+        }
+
+        if (err.type.ERR_BAD_SIZE) {
+                fprintf(stderr, "Invalid size.\n");
+        }
+
+        if (err.type.ERR_ALLOC) {
+                fprintf(stderr, "Invalid capacity.\n");
         }
 }
 

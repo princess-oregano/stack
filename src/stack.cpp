@@ -98,7 +98,7 @@ stack_dtor(stack_t *stack)
         stack->size = (unsigned int) -1;
         stack->capacity = (unsigned int) -1;
 
-        if (stack->data != nullptr)
+        if (stack->data != nullptr)   //not nullptr, bit still invalid??
                 free(stack->data);
 
         stack->data = (elem_t *) 0xDEAD0000;

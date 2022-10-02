@@ -1,14 +1,17 @@
 #include <stdio.h>
 
-union err_t {
-        long long err;
+struct error_t {
+        bool ERR_NO_ERR = 0;
+        bool ERR_ALLOC = 0;
+        bool ERR_BAD_SIZE = 0;
+        bool ERR_BAD_CAP = 0;
 };
 
-enum error_t: unsigned long {
-        ERR_NO_ERR = 0,
-        ERR_ALLOC  = 1,
+union err_u {
+        long long val;
+        error_t type {};
 };
 
 // Prints all encountered errors stored in err variable.
-void decypher_error(unsigned int err);
+void decypher_error(err_u err);
 

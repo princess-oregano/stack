@@ -6,20 +6,22 @@ int
 main()
 {
         stack_t stack {};
-        unsigned int error = 0;
+        err_u error {};
 
-        if ((error |= stack_ctor(&stack, DEF_STACK_CAPACITY, VAR_INFO(stack))) != ERR_NO_ERR) {
+        stack_ctor(&stack, DEF_STACK_CAPACITY, VAR_INFO(stack));
+        if (error.val != 0) {
                 decypher_error(error);
-                return error;
+                return error.val;
         }
 
         printf("Enter values:\n");
 
         elem_t value = 0;
         while (scanf("%d", &value) == 1) {
-                if ((error |= stack_push(&stack, value)) != ERR_NO_ERR) {
+                stack_push(&stack, value);
+                if (error.val) {
                         decypher_error(error);
-                        return error;
+                        return error.val;
                 }
         }
 
@@ -30,9 +32,10 @@ main()
                 printf("ret = %d\n", ret);
         }
 
-        if ((error |= stack_dtor(&stack)) != ERR_NO_ERR) {
+        stack_dtor(&stack);
+        if (error.val != 0) {
                 decypher_error(error);
-                return error;
+                return error.val;
         }
 
         return 0;
