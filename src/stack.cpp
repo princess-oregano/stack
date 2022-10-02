@@ -39,7 +39,8 @@ data_resize(elem_t **data, stack_t *stack, int mode)
         }
 
         if ((stk_data_ptr = (elem_t *) realloc(*data,
-                            stack->capacity * sizeof(stack_t))) == nullptr) {
+                                stack->capacity * sizeof(elem_t) +
+                                2 * sizeof(unsigned long long))) == nullptr) {
                 err.type.ERR_ALLOC = true;
                 return err.val;
         }
@@ -50,8 +51,13 @@ data_resize(elem_t **data, stack_t *stack, int mode)
                 for (size_t i = stack->size; i < stack->capacity; i++)
                         stack->data[i] = 0;
 
+        *((unsigned long long *) stack->data) = CANARY_VAL;
+        *(unsigned long long *) (((char *) stack->data) +
+                                  (stack->capacity + 1) * sizeof(elem_t) -
+                                   sizeof(unsigned long long)) = CANARY_VAL;
+
         stack->crc_hash = 0;
-        stack->crc_hash = crc8(stack->crc_hash, (unsigned char const *) stack->data,
+        stack->crc_hash = crc8(stack->crc_hash, (unsigned char const *) stack,
                                sizeof(stack_t));
 
         return err.val;
@@ -61,8 +67,8 @@ static void data_dump(stack_t stack)
 {
         size_t i = 0;
 
-        for (i = 0; i < stack.capacity; i++)
-                printf("        [%zu]0x%012x\n", i, stack.data[i]);
+        for (i = 0; i < stack.capacity + 1; i++)
+                printf("        [%zu]0x%016llx\n", i, stack.data[i]);
 }
 
 long long
@@ -74,12 +80,18 @@ stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
         stack->var_info = var_info;
         stack->capacity = capacity;
 
-        if ((stack->data = (elem_t *) calloc(stack->capacity, sizeof(elem_t))) == nullptr) {
+        if ((stack->data = (elem_t *) calloc(stack->capacity * sizeof(elem_t)
+                         + 2 * sizeof(unsigned long long), 1)) == nullptr) {
                 err.type.ERR_ALLOC = 1;
                 return err.val;
         }
 
-        stack->crc_hash = crc8(0, (unsigned char const *) stack->data,
+        *((unsigned long long *) stack->data) = CANARY_VAL;
+        *(unsigned long long *) (((char *) stack->data) +
+                                  (stack->capacity + 1) * sizeof(elem_t) -
+                                   sizeof(unsigned long long)) = CANARY_VAL;
+
+        stack->crc_hash = crc8(0, (unsigned char const *) stack,
                                sizeof(stack_t));
 
         return err.val;
