@@ -4,6 +4,7 @@ struct error_t {
         bool ERR_ALLOC = 0;
         bool ERR_BAD_SIZE = 0;
         bool ERR_BAD_CAP = 0;
+        bool ERR_INVALID_DATA = 0;
 };
 
 union err_u {

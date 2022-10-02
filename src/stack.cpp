@@ -4,6 +4,21 @@
 #include "error.h"
 #include "stack.h"
 
+static unsigned
+crc8(unsigned crc, unsigned char const *data, size_t len)
+{
+        unsigned char const *end = data + len;
+
+        if (data == NULL)
+                return 0;
+
+        crc &= 0xff;
+        while (data < end)
+                crc = crc8_table[crc ^ *data++];
+
+        return crc;
+}
+
 static long long
 data_resize(elem_t **data, stack_t *stack, int mode)
 {
@@ -35,6 +50,10 @@ data_resize(elem_t **data, stack_t *stack, int mode)
                 for (size_t i = stack->size; i < stack->capacity; i++)
                         stack->data[i] = 0;
 
+        stack->crc_hash = 0;
+        stack->crc_hash = crc8(stack->crc_hash, (unsigned char const *) stack->data,
+                               sizeof(stack_t));
+
         return err.val;
 }
 
@@ -52,14 +71,16 @@ stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
         assert(stack);
 
         err_u err {};
-
         stack->var_info = var_info;
-
         stack->capacity = capacity;
+
         if ((stack->data = (elem_t *) calloc(stack->capacity, sizeof(elem_t))) == nullptr) {
                 err.type.ERR_ALLOC = 1;
                 return err.val;
         }
+
+        stack->crc_hash = crc8(0, (unsigned char const *) stack->data,
+                               sizeof(stack_t));
 
         return err.val;
 }
@@ -78,6 +99,10 @@ stack_push(stack_t *stack, elem_t elem)
 
         stack->data[stack->size++] = elem;
 
+        stack->crc_hash = 0;
+        stack->crc_hash = crc8(stack->crc_hash, (unsigned char const *) stack->data,
+                               sizeof(stack_t));
+
         return err.val;
 }
 
@@ -95,6 +120,10 @@ stack_pop(stack_t *stack, elem_t *ret_val)
         if (2 * stack->size < stack->capacity) {
                 err.val |= data_resize(&stack->data, stack, REDUCE);
         }
+
+        stack->crc_hash = 0;
+        stack->crc_hash = crc8(stack->crc_hash, (unsigned char const *) stack->data,
+                               sizeof(stack_t));
 
         return err.val;
 }
@@ -124,6 +153,7 @@ stack_dump(stack_t stack, var_info_t cur_var_info)
         fprintf(stdout,
                 "%s at %s(%d):\n"
                 "%s[%p] \"%s\" at %s at %s(%d)\n"
+                "       hash = %u\n"
                 "       size = %zu\n"
                 "       capacity = %zu\n"
                 "       data[%p]:\n",
@@ -131,7 +161,8 @@ stack_dump(stack_t stack, var_info_t cur_var_info)
                 cur_var_info.line, cur_var_info.init_var_name,
                 &stack, stack.var_info.init_var_name,
                 stack.var_info.func_name, stack.var_info.file_name,
-                stack.var_info.line, stack.size, stack.capacity, &stack.data);
+                stack.var_info.line, stack.crc_hash, stack.size,
+                stack.capacity, &stack.data);
 
         data_dump(stack);
 }
