@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "stack.h"
 #include "error.h"
 
@@ -33,11 +34,15 @@ main()
                 printf("ret = %d\n", ret);
         }
 
+        /*
         error.val |= stack_dtor(&stack);
         if (error.val != 0) {
                 decypher_error(error);
                 return (int) error.val;
         }
+        */
+
+        free(stack.data - 2);
 
         return 0;
 }

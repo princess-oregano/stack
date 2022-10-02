@@ -27,7 +27,8 @@ CXXFLAGS := -O3 -g -std=c++14 -fmax-errors=100 -Wall -Wextra                  \
 	    -fstrict-overflow -flto-odr-type-merging                          \
 	    -fno-omit-frame-pointer                                           \
 	    -fsanitize=alignment                                              \
-	    -fsanitize=bool                                                   \
+            -fsanitize=address                                                \
+            -fsanitize=bool                                                   \
 	    -fsanitize=bounds                                                 \
 	    -fsanitize=enum                                                   \
 	    -fsanitize=float-cast-overflow                                    \

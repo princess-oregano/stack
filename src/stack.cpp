@@ -4,71 +4,49 @@
 #include "error.h"
 #include "stack.h"
 
-static unsigned
-crc8(unsigned crc, unsigned char const *data, size_t len)
+static unsigned int
+crc8(unsigned int crc, void *data, size_t len)
 {
-        unsigned char const *end = data + len;
+        unsigned char const *data_ptr = (unsigned char const *)data;
 
         if (data == NULL)
                 return 0;
 
         crc &= 0xff;
-        while (data < end)
-                crc = crc8_table[crc ^ *data++];
+
+        unsigned char const *end = data_ptr + len;
+        while (data_ptr < end)
+                crc = crc8_table[crc ^ *data_ptr++];
 
         return crc;
 }
 
 static long long
-data_resize(elem_t **data, stack_t *stack, int mode)
+data_resize(stack_t *stack, size_t capacity)
 {
         err_u err {};
 
-        elem_t *stk_data_ptr = nullptr;
-        switch(mode) {
-                case REDUCE:
-                        if (stack->capacity > DEF_STACK_CAPACITY)
-                                stack->capacity /= 2;
-                        break;
-                case INCREASE:
-                        stack->capacity *= 2;
-                        break;
-                default:
-                        assert(0 && "Invalid resize mode.\n");
-                        break;
-        }
+        char *data_ptr = (char *)stack->data - sizeof(unsigned long long);
 
-        if ((stk_data_ptr = (elem_t *) realloc(*data,
-                                stack->capacity * sizeof(elem_t) +
-                                2 * sizeof(unsigned long long))) == nullptr) {
+        char *stk_data_ptr_tmp = (char *) realloc(data_ptr, capacity * sizeof(elem_t) +
+                                2 * sizeof(unsigned long long));
+
+        if (stk_data_ptr_tmp == nullptr) {
                 err.type.ERR_ALLOC = true;
                 return err.val;
         }
-        else
-                *data = stk_data_ptr;
 
-        if (mode == INCREASE)
-                for (size_t i = stack->size; i < stack->capacity; i++)
-                        stack->data[i] = 0;
+        stack->capacity = capacity;
 
-        *((unsigned long long *) stack->data) = CANARY_VAL;
-        *(unsigned long long *) (((char *) stack->data) +
-                                  (stack->capacity + 1) * sizeof(elem_t) -
-                                   sizeof(unsigned long long)) = CANARY_VAL;
+        stack->data = (elem_t *) (stk_data_ptr_tmp + sizeof(unsigned long long));
+
+        *((unsigned long long *) stack->data - 1) = CANARY_VAL;
+        *(unsigned long long *) (stack->data + stack->capacity) = CANARY_VAL;
 
         stack->crc_hash = 0;
-        stack->crc_hash = crc8(stack->crc_hash, (unsigned char const *) stack,
-                               sizeof(stack_t));
+        stack->crc_hash = crc8(stack->crc_hash, stack, sizeof(stack_t));
 
         return err.val;
-}
-
-static void data_dump(stack_t stack)
-{
-        size_t i = 0;
-
-        for (i = 0; i < stack.capacity + 1; i++)
-                printf("        [%zu]0x%016llx\n", i, stack.data[i]);
 }
 
 long long
@@ -77,22 +55,32 @@ stack_ctor(stack_t *stack, unsigned int capacity, var_info_t var_info)
         assert(stack);
 
         err_u err {};
+        char *tmp_data_ptr = nullptr;
+
         stack->var_info = var_info;
         stack->capacity = capacity;
 
-        if ((stack->data = (elem_t *) calloc(stack->capacity * sizeof(elem_t)
-                         + 2 * sizeof(unsigned long long), 1)) == nullptr) {
+
+        tmp_data_ptr = (char *) calloc(stack->capacity * sizeof(elem_t)
+                         + 2 * sizeof(unsigned long long), 1);
+
+        if (tmp_data_ptr == nullptr) {
                 err.type.ERR_ALLOC = 1;
                 return err.val;
         }
 
-        *((unsigned long long *) stack->data) = CANARY_VAL;
-        *(unsigned long long *) (((char *) stack->data) +
-                                  (stack->capacity + 1) * sizeof(elem_t) -
-                                   sizeof(unsigned long long)) = CANARY_VAL;
+        stack->data = (elem_t *)(tmp_data_ptr + sizeof(unsigned long long));
 
-        stack->crc_hash = crc8(0, (unsigned char const *) stack,
-                               sizeof(stack_t));
+        fprintf(stderr, "(unsigned long long *) stack->data = %p\n",
+                         (unsigned long long *) stack->data);
+        fprintf(stderr, "(unsigned long long *) stack->data - 1 = %p\n",
+                         (unsigned long long *) stack->data - 1);
+        *((unsigned long long *) stack->data - 1) = CANARY_VAL;
+        *((unsigned long long *) (stack->data + stack->capacity)) = CANARY_VAL;
+
+        fprintf(stderr, "stack address = %p\n", stack);
+        fprintf(stderr, "sizeof(stack) = %zx\n", sizeof(stack_t));
+        stack->crc_hash = crc8(0, stack, sizeof(stack_t));
 
         return err.val;
 }
@@ -105,15 +93,14 @@ stack_push(stack_t *stack, elem_t elem)
         err_u err {};
 
         if (stack->size >= stack->capacity) {
-                if ((err.val |= data_resize(&stack->data, stack, INCREASE)) != 0)
+                if ((err.val |= data_resize(stack, stack->capacity*2)) != 0)
                         return err.val;
         }
 
         stack->data[stack->size++] = elem;
 
         stack->crc_hash = 0;
-        stack->crc_hash = crc8(stack->crc_hash, (unsigned char const *) stack->data,
-                               sizeof(stack_t));
+        stack->crc_hash = crc8(stack->crc_hash, stack, sizeof(stack_t));
 
         return err.val;
 }
@@ -130,12 +117,11 @@ stack_pop(stack_t *stack, elem_t *ret_val)
         stack->data[stack->size] = DATA_POISON;
 
         if (2 * stack->size < stack->capacity) {
-                err.val |= data_resize(&stack->data, stack, REDUCE);
+                err.val |= data_resize(stack, stack->capacity/2);
         }
 
         stack->crc_hash = 0;
-        stack->crc_hash = crc8(stack->crc_hash, (unsigned char const *) stack->data,
-                               sizeof(stack_t));
+        stack->crc_hash = crc8(stack->crc_hash, stack, sizeof(stack_t));
 
         return err.val;
 }
@@ -154,9 +140,18 @@ stack_dtor(stack_t *stack)
         if (stack->data != nullptr)   //not nullptr, bit still invalid??
                 free(stack->data);
 
-        stack->data = (elem_t *) 0xDEAD0000;
+        stack->data = (elem_t *) 0xDEAD;
 
         return err.val;
+}
+
+static void
+data_dump(stack_t stack)
+{
+        size_t i = 0;
+
+        for (i = 0; i < stack.capacity; i++)
+                printf("        [%zu]0x%016llx %d\n", i, (unsigned long long) stack.data[i], stack.data[i]);
 }
 
 void
