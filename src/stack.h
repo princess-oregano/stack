@@ -2,10 +2,22 @@
 #define STACK_H
 
 #include <stdio.h>
+#include "config.h"
+#include "error.h"
 
 #define VAR_INFO(var) ((var_info_t) {__FILE__, __LINE__, __PRETTY_FUNCTION__, #var})
 
-typedef int elem_t;
+#ifdef CANARY
+#define ON_CANARY(...) __VA_ARGS__
+#else
+#define ON_CANARY(...)
+#endif
+
+#ifdef HASH
+#define ON_HASH(...) __VA_ARGS__
+#else
+#define ON_HASH(...)
+#endif
 
 const size_t DEF_STACK_CAPACITY = 10;
 const unsigned char DATA_POISON = 0xBE;
@@ -47,13 +59,13 @@ struct var_info_t {
 };
 
 struct stack_t {
-        unsigned long long left_canary = CANARY_VAL;
+        ON_CANARY(unsigned long long left_canary = CANARY_VAL;)
         var_info_t var_info {};
         elem_t *data = nullptr;
         size_t size = 0;
         size_t capacity = 0;
-        unsigned crc_hash = 0;
-        unsigned long long right_canary = CANARY_VAL;
+        ON_HASH(unsigned crc_hash = 0;)
+        ON_CANARY(unsigned long long right_canary = CANARY_VAL;)
 };
 
 // Creates stack.
@@ -71,6 +83,9 @@ stack_dtor(stack_t *stack);
 // Prints all available information about stack.
 void
 stack_dump(stack_t stack, var_info_t cur_var_info);
+// Checks condition of stack.
+long long
+verify_stack(stack_t *stack);
 
 #endif // STACK_H
 
