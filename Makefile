@@ -51,7 +51,8 @@ CXXFLAGS := -O3 -g -std=c++14 -fmax-errors=100 -Wall -Wextra                  \
 .SILENT:
 all: out run
 
-run:
+run:	
+	./$(TARGET)
 	printf "%s\n" "Finished."
 
 out: $(OBJDIR) $(OBJ)

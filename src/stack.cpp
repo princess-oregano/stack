@@ -127,7 +127,7 @@ long long
 stack_pop(stack_t *stack, elem_t *ret_val)
 {
         assert(stack);
-        verify_stack(stack);
+        stack_verify(stack);
 
         err_u err {};
 
@@ -202,7 +202,7 @@ stack_dump(stack_t stack, var_info_t cur_var_info)
 }
 
 long long
-verify_stack(stack_t *stack)
+stack_verify(stack_t *stack)
 {
         assert(stack);
 

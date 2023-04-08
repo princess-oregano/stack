@@ -85,7 +85,7 @@ void
 stack_dump(stack_t stack, var_info_t cur_var_info);
 // Checks condition of stack.
 long long
-verify_stack(stack_t *stack);
+stack_verify(stack_t *stack);
 
 #endif // STACK_H
 
